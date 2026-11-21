@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic alo - Followers</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="brand">Islamic alo</a>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="followers.html">Followers</a>
+            <a href="profile.html">Profile</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2 style="color: var(--primary-dark);">Followers তালিকা</h2>
+            <p style="font-size: 13px; color: var(--muted); margin-top: 4px;">
+                মোট ফলোয়ার: <strong id="totalFollowers">0</strong> (Google অ্যাকাউন্ট দিয়ে Follow করা)
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Google Email</th>
+                        <th>সময়</th>
+                    </tr>
+                </thead>
+                <tbody id="followersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        checkAdminAuth();
+
+        const followers = getFollowers();
+        document.getElementById("totalFollowers").innerText = followers.length;
+        const tbody = document.getElementById("followersTableBody");
+
+        if (followers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="color: var(--muted);">এখনো কোনো ফলোয়ার যুক্ত হয়নি।</td></tr>`;
+        } else {
+            followers.forEach((f, idx) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td>${f.email}</td>
+                    <td>${f.followedAt}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

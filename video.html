@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic alo - Video Player</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="brand">Islamic alo</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card" id="playerBox" style="text-align: center;">
+            <p>ভিডিও লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const videoId = params.get("v");
+        const box = document.getElementById("playerBox");
+        const videos = getVideos();
+        const vid = videos.find(v => v.id === videoId);
+
+        if (!vid) {
+            box.innerHTML = `<h3 style="color: var(--danger);">ভিডিওটি খুঁজে পাওয়া যায়নি!</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
+        } else if (vid.hidden) {
+            box.innerHTML = `<h3 style="color: var(--danger);">এই ভিডিওটি বর্তমানে Hide (বন্ধ) করা আছে।</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
+        } else if (vid.type === "qr" && isVideoExpired(vid.createdAt)) {
+            box.innerHTML = `<h3 style="color: var(--danger);">এই QR কোডের ৩০ দিনের মেয়াদ শেষ হয়ে গেছে!</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
+        } else {
+            box.innerHTML = `
+                <h2 style="margin-bottom: 14px; color: var(--primary-dark);">${vid.title}</h2>
+                <video src="${vid.url}" controls autoplay style="max-height: 420px;"></video>
+                <p style="margin-top: 12px; font-size: 13px; color: var(--muted);">
+                    ${vid.type === "qr" ? "QR ভিডিও — ৩০ দিন পর্যন্ত কার্যকর" : "Islamic alo ভিডিও"}
+                </p>
+            `;
+        }
+    </script>
+</body>
+</html>

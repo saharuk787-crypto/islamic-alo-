@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic alo - Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="brand">Islamic alo</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="admin.html">Admin</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="avatar">IA</div>
+        <h1>Islamic alo</h1>
+        <p>অফিসিয়াল ভিডিও প্ল্যাটফর্ম</p>
+        <br>
+        <a href="profile.html" class="btn btn-accent">প্রোফাইল দেখুন</a>
+    </section>
+
+    <div class="container">
+        <div class="card">
+            <h2>স্বাগতম!</h2>
+            <p style="margin-top: 8px; color: var(--muted);">
+                এখানে <strong>Islamic alo</strong>-এর নির্ধারিত ভিডিওসমূহ প্রকাশিত হয়। QR কোড স্ক্যান করে নির্ধারিত মেয়াদের মধ্যে সহজেই ভিডিও দেখতে পারবেন।
+            </p>
+        </div>
+
+        <h3 style="margin-bottom: 12px; color: var(--primary-dark);">সাম্প্রতিক প্রোফাইল ভিডিও</h3>
+        <div class="video-grid" id="homeVideos"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const videos = getVideos().filter(v => v.type === 'profile' && !v.hidden);
+        const container = document.getElementById("homeVideos");
+
+        if (videos.length === 0) {
+            container.innerHTML = `<div class="card"><p style="color: var(--muted);">এখনো কোনো প্রোফাইল ভিডিও যুক্ত করা হয়নি।</p></div>`;
+        } else {
+            videos.slice(0, 6).forEach(vid => {
+                const div = document.createElement("div");
+                div.className = "video-card";
+                div.innerHTML = `
+                    <video src="${vid.url}" controls></video>
+                    <h4 style="margin-top: 10px;">${vid.title}</h4>
+                    <span class="badge badge-profile">Profile Video</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

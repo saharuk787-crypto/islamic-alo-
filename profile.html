@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic alo - Profile</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="brand">Islamic alo</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="admin.html">Admin</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="hero">
+            <div class="glass-avatar" title="Islamic alo">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12.75 2.5a9.5 9.5 0 1 0 8.75 13.25A8 8 0 0 1 12.75 2.5z"/>
+                    <path d="M18.5 4.5l.65 1.35 1.45.2-1.05 1.02.25 1.45-1.3-.7-1.3.7.25-1.45-1.05-1.02 1.45-.2L18.5 4.5z"/>
+                </svg>
+            </div>
+            <h1>Islamic alo</h1>
+            <p style="margin: 6px 0; font-size: 14px;">
+                <strong id="followerCount">0</strong> Followers • <strong id="videoCount">0</strong> Videos
+            </p>
+            <button id="followBtn" class="btn btn-accent" onclick="handleFollowClick()">+ Follow</button>
+            <p id="followMsg" style="font-size: 12px; margin-top: 8px; opacity: 0.92;"></p>
+        </section>
+
+        <div class="sort-bar">
+            <button id="btnLatest" class="sort-btn active" onclick="setSortOrder('latest')">Latest</button>
+            <button id="btnOldest" class="sort-btn" onclick="setSortOrder('oldest')">Oldest</button>
+        </div>
+
+        <div class="video-grid-3" id="profileVideos"></div>
+    </div>
+
+    <div id="googleLoginModal" class="glass-modal-backdrop">
+        <div class="glass-modal-box">
+            <h3 style="color: var(--primary-dark); margin-bottom: 6px;">Google দিয়ে লগইন</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">
+                Islamic alo চ্যানেল ফলো করতে আপনার Gmail ঠিকানা দিন
+            </p>
+            <div class="form-group">
+                <label>Google Email</label>
+                <input type="email" id="googleEmailModalInput" placeholder="example@gmail.com">
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button class="btn btn-glass btn-sm" style="color: var(--text); border-color: #cbd5e1;" onclick="closeGoogleModal()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="confirmGoogleFollow()">Continue & Follow</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let currentUserEmail = sessionStorage.getItem("ia_google_user") || null;
+        let currentSort = "latest";
+
+        function updateFollowUI() {
+            const followers = getFollowers();
+            document.getElementById("followerCount").innerText = followers.length;
+
+            const btn = document.getElementById("followBtn");
+            const msg = document.getElementById("followMsg");
+
+            if (currentUserEmail && followers.some(f => f.email === currentUserEmail)) {
+                btn.innerText = "✓ Following";
+                btn.classList.remove("btn-accent");
+                btn.classList.add("btn-dark");
+                msg.innerText = "Google অ্যাকাউন্ট (" + currentUserEmail + ") দিয়ে ফলো করা আছে";
+            } else {
+                btn.innerText = "+ Follow";
+                btn.classList.remove("btn-dark");
+                btn.classList.add("btn-accent");
+                msg.innerText = "Follow করতে চাইলে Google দিয়ে লগইন করতে হবে (আলাদা অ্যাকাউন্ট তৈরি হবে না)";
+            }
+        }
+
+        function openGoogleModal() {
+            document.getElementById("googleEmailModalInput").value = "";
+            document.getElementById("googleLoginModal").classList.add("open");
+        }
+
+        function closeGoogleModal() {
+            document.getElementById("googleLoginModal").classList.remove("open");
+        }
+
+        function applyFollowForEmail(email) {
+            let followers = getFollowers();
+            const existingIndex = followers.findIndex(f => f.email === email);
+
+            if (existingIndex === -1) {
+                followers.push({
+                    email: email,
+                    followedAt: new Date().toLocaleString("bn-BD")
+                });
+            } else {
+                followers.splice(existingIndex, 1);
+            }
+
+            saveFollowers(followers);
+            updateFollowUI();
+        }
+
+        function confirmGoogleFollow() {
+            const rawEmail = document.getElementById("googleEmailModalInput").value.trim().toLowerCase();
+            if (!rawEmail || !rawEmail.includes("@")) {
+                alert("সঠিক Google ইমেইল দিন!");
+                return;
+            }
+            currentUserEmail = rawEmail;
+            sessionStorage.setItem("ia_google_user", currentUserEmail);
+            closeGoogleModal();
+            applyFollowForEmail(currentUserEmail);
+        }
+
+        function handleFollowClick() {
+            if (!currentUserEmail) {
+                openGoogleModal();
+                return;
+            }
+            applyFollowForEmail(currentUserEmail);
+        }
+
+        function setSortOrder(order) {
+            currentSort = order;
+            document.getElementById("btnLatest").classList.toggle("active", order === "latest");
+            document.getElementById("btnOldest").classList.toggle("active", order === "oldest");
+            renderProfileVideos();
+        }
+
+        async function playTileFullscreen(videoEl, overlayEl) {
+            if (!videoEl) return;
+            videoEl.muted = false;
+            videoEl.controls = true;
+            if (overlayEl) {
+                overlayEl.style.display = "none";
+            }
+
+            try {
+                await videoEl.play();
+            } catch (e) {}
+
+            try {
+                if (videoEl.requestFullscreen) {
+                    await videoEl.requestFullscreen();
+                } else if (videoEl.webkitRequestFullscreen) {
+                    videoEl.webkitRequestFullscreen();
+                } else if (videoEl.webkitEnterFullscreen) {
+                    videoEl.webkitEnterFullscreen();
+                }
+            } catch (e) {}
+        }
+
+        async function renderProfileVideos() {
+            let videos = getVideos().filter(v => v.type === 'profile' && !v.hidden);
+            document.getElementById("videoCount").innerText = videos.length;
+
+            if (currentSort === "oldest") {
+                videos = [...videos].reverse();
+            }
+
+            const grid = document.getElementById("profileVideos");
+            grid.innerHTML = "";
+
+            if (videos.length === 0) {
+                grid.innerHTML = `<div class="card" style="grid-column: 1 / -1;"><p style="color: var(--muted);">কোনো প্রোফাইল ভিডিও পাওয়া যায়নি।</p></div>`;
+                return;
+            }
+
+            for (let idx = 0; idx < videos.length; idx++) {
+                const vid = videos[idx];
+                const playableUrl = await getVideoUrlFromDB(vid.id, vid.url);
+
+                const tile = document.createElement("div");
+                tile.className = "grid-tile";
+                tile.style.animationDelay = `${Math.min(idx * 45, 300)}ms`;
+
+                const videoEl = document.createElement("video");
+                videoEl.src = playableUrl;
+                videoEl.muted = true;
+                videoEl.playsInline = true;
+                videoEl.preload = "metadata";
+
+                const overlay = document.createElement("div");
+                overlay.className = "grid-tile-overlay";
+                overlay.innerText = vid.title;
+
+                videoEl.onerror = () => {
+                    overlay.style.display = "block";
+                    overlay.innerText = vid.title + " • ফাইল লোড হয়নি";
+                };
+
+                tile.onclick = () => playTileFullscreen(videoEl, overlay);
+
+                tile.appendChild(videoEl);
+                tile.appendChild(overlay);
+                grid.appendChild(tile);
+            }
+        }
+
+        updateFollowUI();
+        renderProfileVideos();
+    </script>
+</body>
+</html>

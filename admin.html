@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic alo - Admin Login</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-login-box {
+            max-width: 440px;
+            margin: 24px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+        }
+        .admin-login-top {
+            background: linear-gradient(135deg, #115e59, #0f766e);
+            color: #ffffff;
+            padding: 24px 20px;
+            text-align: center;
+        }
+        .admin-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.16);
+            color: #fef3c7;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+        .admin-login-body {
+            padding: 22px 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="brand">Islamic alo</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="admin-login-box">
+            <div class="admin-login-top">
+                <div class="admin-badge">ADMIN PORTAL</div>
+                <h2 style="font-size: 22px;">Islamic alo</h2>
+                <p style="font-size: 12px; opacity: 0.9; margin-top: 4px;">
+                    ভিডিও, QR কোড ও ফলোয়ার নিয়ন্ত্রণ প্যানেল
+                </p>
+            </div>
+
+            <div class="admin-login-body">
+                <form onsubmit="handleAdminLogin(event)">
+                    <div class="form-group">
+                        <label>Admin Email</label>
+                        <input type="email" id="adminEmailInput" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="adminPassInput" placeholder="আপনার পাসওয়ার্ড দিন" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px;">
+                        Dashboard-এ প্রবেশ করুন
+                    </button>
+                </form>
+                <p id="loginError" style="color: var(--danger); font-size: 13px; margin-top: 10px; text-align: center;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const currentAdmin = getAdminConfig();
+        document.getElementById("adminEmailInput").value = currentAdmin.email;
+
+        if (sessionStorage.getItem("ia_is_admin") === "true") {
+            window.location.href = "dashboard.html";
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const admin = getAdminConfig();
+            const email = document.getElementById("adminEmailInput").value.trim().toLowerCase();
+            const pass = document.getElementById("adminPassInput").value;
+
+            if (email === admin.email.toLowerCase() && pass === admin.password) {
+                sessionStorage.setItem("ia_is_admin", "true");
+                window.location.href = "dashboard.html";
+            } else {
+                document.getElementById("loginError").innerText = "ভুল ইমেইল বা পাসওয়ার্ড!";
+            }
+        }
+    </script>
+</body>
+</html>
