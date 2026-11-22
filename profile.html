@@ -29,7 +29,6 @@
                 <strong id="followerCount">0</strong> Followers • <strong id="videoCount">0</strong> Videos
             </p>
             <button id="followBtn" class="btn btn-accent" onclick="handleFollowClick()">+ Follow</button>
-            <p id="followMsg" style="font-size: 12px; margin-top: 8px; opacity: 0.92;"></p>
         </section>
 
         <div class="sort-bar">
@@ -40,105 +39,30 @@
         <div class="video-grid-3" id="profileVideos"></div>
     </div>
 
-    <div id="googleLoginModal" class="glass-modal-backdrop">
-        <div class="glass-modal-box">
-            <h3 style="color: var(--primary-dark); margin-bottom: 6px;">Google দিয়ে লগইন</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">
-                Islamic alo চ্যানেল ফলো করতে আপনার Gmail ঠিকানা দিন
-            </p>
-            <div class="form-group">
-                <label>Google Email</label>
-                <input type="email" id="googleEmailModalInput" placeholder="example@gmail.com">
-            </div>
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                <button type="button" class="btn btn-glass btn-sm" style="color: var(--text); border-color: #cbd5e1;" onclick="closeGoogleModal()">Cancel</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="confirmGoogleFollow()">Continue & Follow</button>
-            </div>
-        </div>
-    </div>
-
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="config.js"></script>
     <script>
-        let currentUserEmail = sessionStorage.getItem("ia_google_user") || null;
+        const LOCAL_VIDEOS_KEY = "ia_local_videos_v1";
+        const FOLLOW_COUNT_KEY = "ia_follow_count_v1";
         let currentSort = "latest";
-        let allFirestoreVideos = [];
-        let allFollowers = [];
+        let profileVideos = [];
 
-        async function loadFollowerData() {
-            if (!fbDb) return;
-            try {
-                const snap = await fbDb.collection("followers").get();
-                allFollowers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            } catch (e) {
-                allFollowers = [];
-            }
-            updateFollowUI();
+        function getFollowCount() {
+            return parseInt(localStorage.getItem(FOLLOW_COUNT_KEY) || "0", 10) || 0;
         }
 
-        function updateFollowUI() {
-            document.getElementById("followerCount").innerText = allFollowers.length;
+        function setFollowCount(n) {
+            localStorage.setItem(FOLLOW_COUNT_KEY, String(Math.max(0, n)));
+            document.getElementById("followerCount").innerText = getFollowCount();
+        }
+
+        function handleFollowClick() {
+            const next = getFollowCount() + 1;
+            setFollowCount(next);
             const btn = document.getElementById("followBtn");
-            const msg = document.getElementById("followMsg");
-
-            if (currentUserEmail && allFollowers.some(f => f.email === currentUserEmail)) {
-                btn.innerText = "✓ Following";
-                btn.classList.remove("btn-accent");
-                btn.classList.add("btn-dark");
-                msg.innerText = "Google অ্যাকাউন্ট (" + currentUserEmail + ") দিয়ে ফলো করা আছে";
-            } else {
-                btn.innerText = "+ Follow";
-                btn.classList.remove("btn-dark");
-                btn.classList.add("btn-accent");
-                msg.innerText = "Follow করতে চাইলে Google দিয়ে লগইন করতে হবে";
-            }
-        }
-
-        function openGoogleModal() {
-            document.getElementById("googleEmailModalInput").value = "";
-            document.getElementById("googleLoginModal").classList.add("open");
-        }
-
-        function closeGoogleModal() {
-            document.getElementById("googleLoginModal").classList.remove("open");
-        }
-
-        async function applyFollowForEmail(email) {
-            if (!fbDb) return;
-            const docId = encodeURIComponent(email);
-            const existing = allFollowers.find(f => f.email === email);
-
-            if (!existing) {
-                await fbDb.collection("followers").doc(docId).set({
-                    email: email,
-                    followedAt: Date.now()
-                });
-            } else {
-                await fbDb.collection("followers").doc(docId).delete();
-            }
-            await loadFollowerData();
-        }
-
-        async function confirmGoogleFollow() {
-            const rawEmail = document.getElementById("googleEmailModalInput").value.trim().toLowerCase();
-            if (!rawEmail || !rawEmail.includes("@")) {
-                alert("সঠিক Google ইমেইল দিন!");
-                return;
-            }
-            currentUserEmail = rawEmail;
-            sessionStorage.setItem("ia_google_user", currentUserEmail);
-            closeGoogleModal();
-            await applyFollowForEmail(currentUserEmail);
-        }
-
-        async function handleFollowClick() {
-            if (!currentUserEmail) {
-                openGoogleModal();
-                return;
-            }
-            await applyFollowForEmail(currentUserEmail);
+            btn.innerText = "✓ Following (" + next + ")";
         }
 
         function setSortOrder(order) {
@@ -148,79 +72,66 @@
             renderProfileVideos();
         }
 
-        async function playTileFullscreen(videoEl, overlayEl) {
-            if (!videoEl) return;
-            videoEl.muted = false;
-            videoEl.controls = true;
-            if (overlayEl) overlayEl.style.display = "none";
-
+        async function loadProfileVideos() {
+            let localVids = [];
             try {
-                await videoEl.play();
-            } catch (e) {}
-
-            try {
-                if (videoEl.requestFullscreen) {
-                    await videoEl.requestFullscreen();
-                } else if (videoEl.webkitRequestFullscreen) {
-                    videoEl.webkitRequestFullscreen();
-                } else if (videoEl.webkitEnterFullscreen) {
-                    videoEl.webkitEnterFullscreen();
-                }
-            } catch (e) {}
-        }
-
-        async function loadVideosFromFirestore() {
-            if (!fbDb) return;
-            try {
-                const snap = await fbDb.collection("videos").orderBy("createdAt", "desc").get();
-                allFirestoreVideos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const raw = localStorage.getItem(LOCAL_VIDEOS_KEY);
+                localVids = raw ? JSON.parse(raw) : [];
             } catch (e) {
-                const snap = await fbDb.collection("videos").get();
-                allFirestoreVideos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                localVids = [];
             }
+
+            let cloudVids = [];
+            if (typeof fbDb !== "undefined" && fbDb) {
+                try {
+                    const snap = await fbDb.collection("videos").get();
+                    cloudVids = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                } catch (e) {
+                    cloudVids = [];
+                }
+            }
+
+            const merged = new Map();
+            [...cloudVids, ...localVids].forEach(item => {
+                if (item && item.id) {
+                    const prev = merged.get(item.id) || {};
+                    merged.set(item.id, { ...prev, ...item });
+                }
+            });
+
+            profileVideos = Array.from(merged.values()).filter(v => !v.hidden);
             renderProfileVideos();
         }
 
         function renderProfileVideos() {
-            let videos = allFirestoreVideos.filter(v => v.type === "profile" && !v.hidden);
-            document.getElementById("videoCount").innerText = videos.length;
-
+            let list = [...profileVideos];
             if (currentSort === "oldest") {
-                videos = [...videos].reverse();
+                list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            } else {
+                list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             }
 
+            document.getElementById("videoCount").innerText = list.length;
             const grid = document.getElementById("profileVideos");
             grid.innerHTML = "";
 
-            if (videos.length === 0) {
-                grid.innerHTML = `<div class="card" style="grid-column: 1 / -1;"><p style="color: var(--muted);">কোনো প্রোফাইল ভিডিও পাওয়া যায়নি।</p></div>`;
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="card" style="grid-column: 1 / -1;"><p style="color: var(--muted);">কোনো ভিডিও পাওয়া যায়নি।</p></div>`;
                 return;
             }
 
-            videos.forEach((vid, idx) => {
+            list.forEach((vid, idx) => {
                 const tile = document.createElement("div");
                 tile.className = "grid-tile";
                 tile.style.animationDelay = `${Math.min(idx * 45, 300)}ms`;
 
-                if (vid.videoUrl) {
+                if (vid.src) {
                     const videoEl = document.createElement("video");
-                    videoEl.src = vid.videoUrl;
-                    videoEl.muted = true;
+                    videoEl.src = vid.src;
+                    videoEl.controls = true;
                     videoEl.playsInline = true;
                     videoEl.preload = "metadata";
-
-                    const overlay = document.createElement("div");
-                    overlay.className = "grid-tile-overlay";
-                    overlay.innerText = vid.title;
-
-                    videoEl.onerror = () => {
-                        overlay.style.display = "block";
-                        overlay.innerText = vid.title + " • লিংক লোড হয়নি";
-                    };
-
-                    tile.onclick = () => playTileFullscreen(videoEl, overlay);
                     tile.appendChild(videoEl);
-                    tile.appendChild(overlay);
                 } else {
                     tile.style.background = "#0f172a";
                     tile.style.display = "flex";
@@ -229,15 +140,19 @@
                     tile.style.color = "#ffffff";
                     tile.style.padding = "12px";
                     tile.style.textAlign = "center";
-                    tile.innerText = vid.title + (vid.fileName ? (" (" + vid.fileName + ")") : "");
+                    tile.innerText = vid.title || vid.fileName || "Video";
                 }
 
+                const overlay = document.createElement("div");
+                overlay.className = "grid-tile-overlay";
+                overlay.innerText = vid.title || "Video";
+                tile.appendChild(overlay);
                 grid.appendChild(tile);
             });
         }
 
-        loadFollowerData();
-        loadVideosFromFirestore();
+        document.getElementById("followerCount").innerText = getFollowCount();
+        loadProfileVideos();
     </script>
 </body>
 </html>
