@@ -33,7 +33,33 @@
             margin-bottom: 10px;
         }
         .admin-login-body {
-            padding: 22px 20px;
+            padding: 24px 20px;
+            text-align: center;
+        }
+        .google-login-btn {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+        }
+        .google-login-btn:hover {
+            background: #f8fafc;
+        }
+        .helper-note {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 14px;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -57,47 +83,60 @@
             </div>
 
             <div class="admin-login-body">
-                <form onsubmit="handleAdminLogin(event)">
-                    <div class="form-group">
-                        <label>Admin Email</label>
-                        <input type="email" id="adminEmailInput" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="adminPassInput" placeholder="আপনার পাসওয়ার্ড দিন" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px;">
-                        Dashboard-এ প্রবেশ করুন
-                    </button>
-                </form>
-                <p id="loginError" style="color: var(--danger); font-size: 13px; margin-top: 10px; text-align: center;"></p>
+                <button type="button" id="googleAdminBtn" class="google-login-btn" onclick="handleGoogleAdminLogin()">
+                    <span>Google দিয়ে Admin Login করুন</span>
+                </button>
+                <p id="loginError" style="color: var(--danger, #dc2626); font-size: 13px; margin-top: 12px; text-align: center;"></p>
+                <p class="helper-note">
+                    শুধুমাত্র অনুমোদিত অ্যাডমিন Google অ্যাকাউন্ট দিয়ে Dashboard-এ প্রবেশ করা যাবে।
+                </p>
             </div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
     <script>
-        const currentAdmin = getAdminConfig();
-        document.getElementById("adminEmailInput").value = currentAdmin.email;
+        const errorEl = document.getElementById("loginError");
+        const loginBtn = document.getElementById("googleAdminBtn");
 
-        if (sessionStorage.getItem("ia_is_admin") === "true") {
-            window.location.href = "dashboard.html";
+        if (typeof fbAuth !== "undefined" && fbAuth) {
+            fbAuth.onAuthStateChanged((user) => {
+                if (user && typeof isAdminUser === "function" && isAdminUser(user)) {
+                    sessionStorage.setItem("ia_is_admin", "true");
+                    window.location.href = "dashboard.html";
+                }
+            });
         }
 
-        function handleAdminLogin(e) {
-            e.preventDefault();
-            const admin = getAdminConfig();
-            const email = document.getElementById("adminEmailInput").value.trim().toLowerCase();
-            const pass = document.getElementById("adminPassInput").value;
-
-            if (email === admin.email.toLowerCase() && pass === admin.password) {
-                sessionStorage.setItem("ia_is_admin", "true");
-                window.location.href = "dashboard.html";
-            } else {
-                document.getElementById("loginError").innerText = "ভুল ইমেইল বা পাসওয়ার্ড!";
+        async function handleGoogleAdminLogin() {
+            errorEl.innerText = "";
+            if (typeof signInWithGoogle !== "function") {
+                errorEl.innerText = "Firebase Auth লোড হয়নি। পেজটি রিফ্রেশ করুন।";
+                return;
+            }
+            loginBtn.disabled = true;
+            loginBtn.style.opacity = "0.7";
+            try {
+                const result = await signInWithGoogle();
+                const user = result && result.user;
+                if (user && isAdminUser(user)) {
+                    sessionStorage.setItem("ia_is_admin", "true");
+                    window.location.href = "dashboard.html";
+                } else {
+                    if (typeof signOutUser === "function") {
+                        await signOutUser();
+                    }
+                    sessionStorage.removeItem("ia_is_admin");
+                    errorEl.innerText = "এই Google অ্যাকাউন্টটি Admin হিসেবে অনুমোদিত নয়।";
+                }
+            } catch (err) {
+                errorEl.innerText = "লগইনে সমস্যা হয়েছে: " + (err && err.message ? err.message : "আবার চেষ্টা করুন");
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.style.opacity = "1";
             }
         }
     </script>
