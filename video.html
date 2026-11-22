@@ -12,6 +12,7 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="profile.html">Profile</a>
+            <a href="admin.html">Admin</a>
         </div>
     </nav>
 
@@ -22,31 +23,84 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
     <script>
         const params = new URLSearchParams(window.location.search);
         const videoId = params.get("v");
         const box = document.getElementById("playerBox");
-        const videos = getVideos();
-        const vid = videos.find(v => v.id === videoId);
 
-        if (!vid) {
-            box.innerHTML = `<h3 style="color: var(--danger);">ভিডিওটি খুঁজে পাওয়া যায়নি!</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
-        } else if (vid.hidden) {
-            box.innerHTML = `<h3 style="color: var(--danger);">এই ভিডিওটি বর্তমানে Hide (বন্ধ) করা আছে।</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
-        } else if (vid.type === "qr" && isVideoExpired(vid.createdAt)) {
-            box.innerHTML = `<h3 style="color: var(--danger);">এই QR কোডের ৩০ দিনের মেয়াদ শেষ হয়ে গেছে!</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
-        } else {
+        function readLocalVideoById(id) {
+            try {
+                const raw = localStorage.getItem("ia_local_videos_v1");
+                const list = raw ? JSON.parse(raw) : [];
+                return list.find(v => v.id === id) || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function loadAndPlayVideo() {
+            if (!videoId) {
+                box.innerHTML = `<h3 style="color: var(--danger);">ভিডিও আইডি পাওয়া যায়নি!</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
+                return;
+            }
+
+            let vid = null;
+            if (typeof fbDb !== "undefined" && fbDb) {
+                try {
+                    const doc = await fbDb.collection("videos").doc(videoId).get();
+                    if (doc.exists) {
+                        vid = { id: doc.id, ...doc.data() };
+                    }
+                } catch (e) {}
+            }
+
+            const localVid = readLocalVideoById(videoId);
+            if (!vid) {
+                vid = localVid;
+            } else if (localVid) {
+                vid = {
+                    ...vid,
+                    videoUrl: vid.videoUrl || localVid.videoUrl || "",
+                    src: vid.src || localVid.src || ""
+                };
+            }
+
+            if (!vid) {
+                box.innerHTML = `<h3 style="color: var(--danger);">ভিডিওটি খুঁজে পাওয়া যায়নি!</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
+                return;
+            }
+
+            if (vid.hidden) {
+                box.innerHTML = `<h3 style="color: var(--danger);">এই ভিডিওটি বর্তমানে Hide করা আছে।</h3><br><a href="index.html" class="btn btn-primary">Home-এ যান</a>`;
+                return;
+            }
+
+            const playableUrl = vid.videoUrl || vid.src || "";
+            if (!playableUrl) {
+                box.innerHTML = `
+                    <h3 style="margin-bottom: 10px; color: var(--primary-dark);">${vid.title || "Islamic alo Video"}</h3>
+                    <p style="color: var(--muted); font-size: 13px;">
+                        এই ভিডিওর সরাসরি ভিডিও লিংক যুক্ত করা নেই। অন্য মোবাইল থেকে প্লে করতে ড্যাশবোর্ডে ভিডিও লিংক দিন।
+                    </p>
+                    <br>
+                    <a href="profile.html" class="btn btn-primary">Profile-এ যান</a>
+                `;
+                return;
+            }
+
             box.innerHTML = `
-                <h2 style="margin-bottom: 14px; color: var(--primary-dark);">${vid.title}</h2>
-                <video src="${vid.url}" controls autoplay style="max-height: 420px;"></video>
+                <h2 style="margin-bottom: 14px; color: var(--primary-dark);">${vid.title || "Islamic alo Video"}</h2>
+                <video src="${playableUrl}" controls autoplay playsinline style="width: 100%; max-height: 440px; border-radius: 12px; background: #000;"></video>
                 <p style="margin-top: 12px; font-size: 13px; color: var(--muted);">
-                    ${vid.type === "qr" ? "QR ভিডিও — ৩০ দিন পর্যন্ত কার্যকর" : "Islamic alo ভিডিও"}
+                    ${vid.type === "qr" ? "QR ভিডিও — সরাসরি প্লে হচ্ছে" : "Islamic alo ভিডিও"}
                 </p>
             `;
         }
+
+        loadAndPlayVideo();
     </script>
 </body>
 </html>

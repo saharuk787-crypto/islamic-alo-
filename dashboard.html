@@ -252,11 +252,15 @@
                     <label>ভিডিওর ধরন বেছে নিন</label>
                     <select id="vidType">
                         <option value="profile">Profile ভিডিও (প্রোফাইলে দেখাবে)</option>
-                        <option value="qr">QR Code ভিডিও (QR কোড তৈরি হবে)</option>
+                        <option value="qr">QR Code ভিডিও (QR কোড থেকে সরাসরি প্লে হবে)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>ভিডিও ফাইল নির্বাচন করুন</label>
+                    <label>সরাসরি ভিডিও লিংক / Direct MP4 URL (অন্য মোবাইল থেকে প্লে করার জন্য)</label>
+                    <input type="url" id="vidUrl" placeholder="https://example.com/video.mp4">
+                </div>
+                <div class="form-group">
+                    <label>অথবা ভিডিও ফাইল নির্বাচন করুন</label>
                     <input type="file" id="vidFile" accept="video/*">
                 </div>
                 <button type="button" id="uploadSubmitBtn" class="btn btn-primary" onclick="handleUpload()">ভিডিও প্রকাশ করুন</button>
@@ -343,6 +347,14 @@
 
             videosList = Array.from(mergedMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             document.getElementById("dashVideoCount").innerText = videosList.length;
+
+            if (typeof fbDb !== "undefined" && fbDb) {
+                try {
+                    const fSnap = await fbDb.collection("followers").get();
+                    document.getElementById("dashFollowerCount").innerText = fSnap.size;
+                } catch (e) {}
+            }
+
             renderAdminVideos();
         }
 
@@ -359,83 +371,65 @@
             window.location.href = "admin.html";
         }
 
-        function fileToDataUrl(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onprogress = (ev) => {
-                    if (ev.lengthComputable) {
-                        const pct = 15 + Math.round((ev.loaded / ev.total) * 55);
-                        setUploadProgress(pct, "ভিডিও ফাইল প্রসেস হচ্ছে...");
-                    }
-                };
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
         async function handleUpload() {
             const titleInput = document.getElementById("vidTitle");
             const typeSelect = document.getElementById("vidType");
+            const urlInput = document.getElementById("vidUrl");
             const fileInput = document.getElementById("vidFile");
             const btn = document.getElementById("uploadSubmitBtn");
 
             const title = titleInput.value.trim() || "Islamic alo Video";
             const type = typeSelect.value || "profile";
+            const directUrl = urlInput.value.trim();
             const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
             const vidId = "vid_" + Date.now();
 
             btn.disabled = true;
-            setUploadProgress(15, "আপলোড শুরু হচ্ছে...");
+            setUploadProgress(20, "আপলোড শুরু হচ্ছে...");
 
-            let playableSrc = "";
-            let dataUrlForStorage = "";
-
+            let localBlobUrl = "";
             if (file) {
-                playableSrc = URL.createObjectURL(file);
-                LOCAL_BLOBS[vidId] = playableSrc;
-                if (file.size <= 1500000) {
-                    try {
-                        dataUrlForStorage = await fileToDataUrl(file);
-                    } catch (e) {
-                        dataUrlForStorage = "";
-                    }
-                } else {
-                    setUploadProgress(70, "ভিডিও প্রস্তুত হচ্ছে...");
-                }
+                localBlobUrl = URL.createObjectURL(file);
+                LOCAL_BLOBS[vidId] = localBlobUrl;
             }
+
+            const finalPlayUrl = directUrl || localBlobUrl || "";
+            const createdAt = Date.now();
 
             const newVideo = {
                 id: vidId,
                 title: title,
                 type: type,
+                videoUrl: directUrl || "",
+                src: finalPlayUrl,
                 fileName: file ? file.name : "",
-                src: dataUrlForStorage || playableSrc || "",
                 hidden: false,
-                createdAt: Date.now()
+                createdAt: createdAt
             };
 
             const existingLocal = readLocalVideos().filter(v => v.id !== vidId);
             existingLocal.unshift(newVideo);
             writeLocalVideos(existingLocal);
 
-            setUploadProgress(88, "সংরক্ষণ হচ্ছে...");
+            setUploadProgress(65, "Firestore ডাটাবেসে পাঠানো হচ্ছে...");
             if (typeof fbDb !== "undefined" && fbDb) {
                 try {
                     await fbDb.collection("videos").doc(vidId).set({
                         id: vidId,
                         title: title,
                         type: type,
+                        videoUrl: directUrl || "",
+                        src: directUrl || "",
                         fileName: file ? file.name : "",
-                        src: dataUrlForStorage || "",
                         hidden: false,
-                        createdAt: newVideo.createdAt
+                        createdAt: createdAt
                     });
                 } catch (e) {}
             }
 
             setUploadProgress(100, "✓ ১০০% আপলোড সম্পন্ন হয়েছে!");
             titleInput.value = "";
+            urlInput.value = "";
             fileInput.value = "";
             await loadAllVideos();
             btn.disabled = false;
@@ -475,7 +469,7 @@
             }
 
             videosList.forEach((vid) => {
-                const videoSrc = LOCAL_BLOBS[vid.id] || vid.src || "";
+                const videoSrc = LOCAL_BLOBS[vid.id] || vid.videoUrl || vid.src || "";
                 const card = document.createElement("div");
                 card.className = "dash-mini-card";
 
@@ -496,6 +490,9 @@
                         <div class="qr-mini-frame">
                             <div id="qrcode-${vid.id}"></div>
                         </div>
+                        <div>
+                            <a href="video.html?v=${vid.id}" target="_blank" class="btn btn-primary btn-sm">সরাসরি খুলুন</a>
+                        </div>
                     </div>
                 ` : "";
 
@@ -503,7 +500,6 @@
                     ${mediaHtml}
                     <div class="dash-title-row">
                         <div class="dash-mini-title" title="${vid.title}">${vid.title}</div>
-                        ${vid.type === "qr" ? `<span class="qr-icon-btn" title="QR"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm10 0h2v2h-2v-2zm4 0h2v4h-2v-4zm-4 4h2v2h-2v-2zm2 2h4v2h-4v-2z"/></svg></span>` : ""}
                     </div>
                     <div>${badges}</div>
                     ${qrSectionHtml}

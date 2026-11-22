@@ -29,7 +29,13 @@
                 <strong id="followerCount">0</strong> Followers • <strong id="videoCount">0</strong> Videos
             </p>
             <button id="followBtn" class="btn btn-accent" onclick="handleFollowClick()">+ Follow</button>
+            <p id="followStatusText" style="font-size: 12px; margin-top: 8px; opacity: 0.92;"></p>
         </section>
+
+        <div id="newVideoAlertBox" class="card" style="display: none; margin-bottom: 14px; border-left: 4px solid #0f766e;">
+            <strong style="color: #0f766e;">নতুন ভিডিও নোটিফিকেশন</strong>
+            <p id="newVideoAlertText" style="font-size: 13px; margin-top: 4px;"></p>
+        </div>
 
         <div class="sort-bar">
             <button id="btnLatest" class="sort-btn active" onclick="setSortOrder('latest')">Latest</button>
@@ -39,30 +45,145 @@
         <div class="video-grid-3" id="profileVideos"></div>
     </div>
 
+    <div id="googleLoginModal" class="glass-modal-backdrop">
+        <div class="glass-modal-box">
+            <h3 style="color: var(--primary-dark); margin-bottom: 6px;">লগইন করে Follow করুন</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">
+                একজন ব্যবহারকারী একবারই Follow করতে পারবেন এবং নতুন ভিডিও এলে নোটিফিকেশন পাবেন।
+            </p>
+            <div class="form-group">
+                <label>আপনার Google Email দিন</label>
+                <input type="email" id="googleEmailModalInput" placeholder="example@gmail.com">
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button type="button" class="btn btn-glass btn-sm" style="color: var(--text); border-color: #cbd5e1;" onclick="closeGoogleModal()">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="confirmGoogleFollow()">Continue & Follow</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="config.js"></script>
     <script>
         const LOCAL_VIDEOS_KEY = "ia_local_videos_v1";
-        const FOLLOW_COUNT_KEY = "ia_follow_count_v1";
+        const LOCAL_FOLLOWERS_KEY = "ia_followers_list_v1";
+        const SEEN_VID_KEY = "ia_seen_latest_video_v1";
+        let currentUserEmail = sessionStorage.getItem("ia_google_user") || null;
         let currentSort = "latest";
-        let profileVideos = [];
+        let allVideos = [];
+        let followersList = [];
 
-        function getFollowCount() {
-            return parseInt(localStorage.getItem(FOLLOW_COUNT_KEY) || "0", 10) || 0;
+        function openGoogleModal() {
+            document.getElementById("googleEmailModalInput").value = "";
+            document.getElementById("googleLoginModal").classList.add("open");
         }
 
-        function setFollowCount(n) {
-            localStorage.setItem(FOLLOW_COUNT_KEY, String(Math.max(0, n)));
-            document.getElementById("followerCount").innerText = getFollowCount();
+        function closeGoogleModal() {
+            document.getElementById("googleLoginModal").classList.remove("open");
         }
 
-        function handleFollowClick() {
-            const next = getFollowCount() + 1;
-            setFollowCount(next);
+        function readLocalFollowers() {
+            try {
+                const raw = localStorage.getItem(LOCAL_FOLLOWERS_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function writeLocalFollowers(arr) {
+            try {
+                localStorage.setItem(LOCAL_FOLLOWERS_KEY, JSON.stringify(arr));
+            } catch (e) {}
+        }
+
+        async function loadFollowers() {
+            let cloudFollowers = [];
+            if (typeof fbDb !== "undefined" && fbDb) {
+                try {
+                    const snap = await fbDb.collection("followers").get();
+                    cloudFollowers = snap.docs.map(d => ({ email: d.id, ...d.data() }));
+                } catch (e) {
+                    cloudFollowers = [];
+                }
+            }
+            const localF = readLocalFollowers();
+            const map = new Map();
+            [...cloudFollowers, ...localF].forEach(item => {
+                if (item && item.email) {
+                    map.set(item.email.toLowerCase(), { email: item.email.toLowerCase() });
+                }
+            });
+            followersList = Array.from(map.values());
+            updateFollowUI();
+        }
+
+        function updateFollowUI() {
+            document.getElementById("followerCount").innerText = followersList.length;
             const btn = document.getElementById("followBtn");
-            btn.innerText = "✓ Following (" + next + ")";
+            const statusEl = document.getElementById("followStatusText");
+
+            const alreadyFollowing = !!(currentUserEmail && followersList.some(f => f.email === currentUserEmail));
+            if (alreadyFollowing) {
+                btn.innerText = "✓ Following";
+                btn.classList.remove("btn-accent");
+                btn.classList.add("btn-dark");
+                statusEl.innerText = currentUserEmail + " হিসেবে ফলো করা আছে";
+            } else {
+                btn.innerText = "+ Follow";
+                btn.classList.remove("btn-dark");
+                btn.classList.add("btn-accent");
+                statusEl.innerText = "Follow করতে লগইন প্রয়োজন";
+            }
+        }
+
+        async function toggleFollowForEmail(email) {
+            const cleanEmail = email.trim().toLowerCase();
+            if (!cleanEmail || !cleanEmail.includes("@")) return;
+
+            const exists = followersList.some(f => f.email === cleanEmail);
+            if (!exists) {
+                followersList.push({ email: cleanEmail, followedAt: Date.now() });
+                if (typeof fbDb !== "undefined" && fbDb) {
+                    try {
+                        await fbDb.collection("followers").doc(encodeURIComponent(cleanEmail)).set({
+                            email: cleanEmail,
+                            followedAt: Date.now()
+                        });
+                    } catch (e) {}
+                }
+            } else {
+                followersList = followersList.filter(f => f.email !== cleanEmail);
+                if (typeof fbDb !== "undefined" && fbDb) {
+                    try {
+                        await fbDb.collection("followers").doc(encodeURIComponent(cleanEmail)).delete();
+                    } catch (e) {}
+                }
+            }
+            writeLocalFollowers(followersList);
+            updateFollowUI();
+        }
+
+        async function confirmGoogleFollow() {
+            const rawEmail = document.getElementById("googleEmailModalInput").value.trim().toLowerCase();
+            if (!rawEmail || !rawEmail.includes("@")) {
+                alert("সঠিক Google Email দিন!");
+                return;
+            }
+            currentUserEmail = rawEmail;
+            sessionStorage.setItem("ia_google_user", currentUserEmail);
+            closeGoogleModal();
+            await toggleFollowForEmail(currentUserEmail);
+        }
+
+        async function handleFollowClick() {
+            if (!currentUserEmail) {
+                openGoogleModal();
+                return;
+            }
+            await toggleFollowForEmail(currentUserEmail);
         }
 
         function setSortOrder(order) {
@@ -70,6 +191,27 @@
             document.getElementById("btnLatest").classList.toggle("active", order === "latest");
             document.getElementById("btnOldest").classList.toggle("active", order === "oldest");
             renderProfileVideos();
+        }
+
+        function checkNewVideoNotification(sortedLatestFirst) {
+            const isFollowing = !!(currentUserEmail && followersList.some(f => f.email === currentUserEmail));
+            const alertBox = document.getElementById("newVideoAlertBox");
+            const alertText = document.getElementById("newVideoAlertText");
+
+            if (!isFollowing || sortedLatestFirst.length === 0) {
+                alertBox.style.display = "none";
+                return;
+            }
+
+            const latestVid = sortedLatestFirst[0];
+            const lastSeenId = localStorage.getItem(SEEN_VID_KEY);
+            if (latestVid && latestVid.id && latestVid.id !== lastSeenId) {
+                alertBox.style.display = "block";
+                alertText.innerText = "নতুন ভিডিও প্রকাশ হয়েছে: " + (latestVid.title || "Islamic alo Video");
+                localStorage.setItem(SEEN_VID_KEY, latestVid.id);
+            } else {
+                alertBox.style.display = "none";
+            }
         }
 
         async function loadProfileVideos() {
@@ -99,16 +241,17 @@
                 }
             });
 
-            profileVideos = Array.from(merged.values()).filter(v => !v.hidden);
+            allVideos = Array.from(merged.values()).filter(v => !v.hidden);
             renderProfileVideos();
         }
 
         function renderProfileVideos() {
-            let list = [...profileVideos];
+            const latestFirst = [...allVideos].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            checkNewVideoNotification(latestFirst);
+
+            let list = [...latestFirst];
             if (currentSort === "oldest") {
                 list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-            } else {
-                list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             }
 
             document.getElementById("videoCount").innerText = list.length;
@@ -125,9 +268,10 @@
                 tile.className = "grid-tile";
                 tile.style.animationDelay = `${Math.min(idx * 45, 300)}ms`;
 
-                if (vid.src) {
+                const playUrl = vid.videoUrl || vid.src || "";
+                if (playUrl) {
                     const videoEl = document.createElement("video");
-                    videoEl.src = vid.src;
+                    videoEl.src = playUrl;
                     videoEl.controls = true;
                     videoEl.playsInline = true;
                     videoEl.preload = "metadata";
@@ -151,8 +295,7 @@
             });
         }
 
-        document.getElementById("followerCount").innerText = getFollowCount();
-        loadProfileVideos();
+        loadFollowers().then(loadProfileVideos);
     </script>
 </body>
 </html>
