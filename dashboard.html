@@ -17,7 +17,6 @@
             padding: 18px;
             margin-bottom: 14px;
             box-shadow: 0 12px 26px rgba(15, 118, 110, 0.16);
-            animation: smoothFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .admin-stats {
             display: grid;
@@ -40,17 +39,13 @@
             font-size: 11px;
             opacity: 0.92;
         }
-
         .compact-bar-card {
             background: var(--card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 14px;
             padding: 12px 14px;
             box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
             margin-bottom: 12px;
-            animation: smoothFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .compact-bar-header {
             display: flex;
@@ -62,9 +57,6 @@
             font-size: 14px;
             font-weight: 700;
             color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
         .mini-toggle-btn {
             display: inline-flex;
@@ -77,12 +69,6 @@
             background: rgba(240, 253, 244, 0.95);
             color: #0f766e;
             cursor: pointer;
-            flex-shrink: 0;
-            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s ease;
-        }
-        .mini-toggle-btn:hover {
-            transform: scale(1.07);
-            background: #ccfbf1;
         }
         .mini-toggle-btn svg {
             width: 16px;
@@ -94,13 +80,10 @@
             margin-top: 14px;
             padding-top: 12px;
             border-top: 1px solid rgba(148, 163, 184, 0.28);
-            animation: glassPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .collapsible-body.open {
             display: block;
         }
-
-        /* Instagram-style Upload Progress Bar */
         .upload-progress-box {
             display: none;
             margin-top: 14px;
@@ -135,7 +118,6 @@
             border-radius: 999px;
             transition: width 0.22s ease;
         }
-
         .dash-compact-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -149,13 +131,10 @@
         }
         .dash-mini-card {
             background: var(--card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 14px;
             padding: 9px;
             box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
-            animation: glassPop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .dash-mini-video {
             width: 100%;
@@ -191,7 +170,6 @@
             background: rgba(240, 253, 244, 0.9);
             color: #0f766e;
             cursor: pointer;
-            flex-shrink: 0;
         }
         .qr-icon-btn svg {
             width: 15px;
@@ -216,13 +194,6 @@
             background: #ffffff;
             border-radius: 8px;
             margin: 4px auto;
-        }
-        .qr-mini-actions {
-            display: flex;
-            gap: 5px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 4px;
         }
         .dash-mini-footer {
             margin-top: 8px;
@@ -285,19 +256,22 @@
                     <input type="text" id="vidTitle" placeholder="ভিডিওর নাম লিখুন...">
                 </div>
                 <div class="form-group">
-                    <label>ভিডিওর ধরন বেছে নিন (২টি ভাগ)</label>
+                    <label>ভিডিওর ধরন বেছে নিন</label>
                     <select id="vidType">
-                        <option value="qr">১. QR Code ভিডিও (HD QR কোড তৈরি হবে + ৩০ দিন মেয়াদ)</option>
-                        <option value="profile">২. Profile ভিডিও (শুধু প্রোফাইলে থাকবে, QR কোড হবে না)</option>
+                        <option value="profile">Profile ভিডিও (প্রোফাইলে দেখাবে)</option>
+                        <option value="qr">QR Code ভিডিও (QR কোড তৈরি হবে + ৩০ দিন মেয়াদ)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>ভিডিও ফাইল নির্বাচন করুন</label>
+                    <label>ভিডিও লিংক / Direct MP4 URL (প্লে করার জন্য)</label>
+                    <input type="url" id="vidUrl" placeholder="https://example.com/video.mp4">
+                </div>
+                <div class="form-group">
+                    <label>অথবা ভিডিও ফাইল নির্বাচন করুন (ঐচ্ছিক)</label>
                     <input type="file" id="vidFile" accept="video/*">
                 </div>
                 <button type="button" id="uploadSubmitBtn" class="btn btn-primary" onclick="handleUpload()">ভিডিও প্রকাশ করুন</button>
 
-                <!-- Instagram-like Progress Bar & Percentage -->
                 <div id="uploadProgressBox" class="upload-progress-box">
                     <div class="upload-progress-top">
                         <span id="uploadStatusText">আপলোড শুরু হচ্ছে...</span>
@@ -310,7 +284,7 @@
             </div>
         </div>
 
-        <h3 style="margin-bottom: 12px; margin-top: 14px; color: var(--primary-dark);">আপলোডকৃত ভিডিওসমূহ (আপনার নিয়ন্ত্রণে)</h3>
+        <h3 style="margin-bottom: 12px; margin-top: 14px; color: var(--primary-dark);">আপলোডকৃত ভিডিওসমূহ</h3>
         <div class="dash-compact-grid" id="adminVideoGrid"></div>
     </div>
 
@@ -406,6 +380,7 @@
         async function handleUpload() {
             const title = document.getElementById("vidTitle").value.trim();
             const type = document.getElementById("vidType").value;
+            const urlInput = document.getElementById("vidUrl").value.trim();
             const fileInput = document.getElementById("vidFile");
             const btn = document.getElementById("uploadSubmitBtn");
 
@@ -422,25 +397,23 @@
             const vidId = "vid_" + Date.now();
 
             btn.disabled = true;
-            setUploadProgress(15, "ভিডিও তথ্য প্রস্তুত হচ্ছে...");
+            setUploadProgress(20, "তথ্য যাচাই হচ্ছে...");
 
             try {
-                setUploadProgress(45, selectedFile ? ("ফাইল প্রসেস হচ্ছে: " + selectedFile.name) : "তথ্য সেভ হচ্ছে...");
-                await new Promise(r => setTimeout(r, 250));
-
-                setUploadProgress(75, "Firestore ডাটাবেসে পাঠানো হচ্ছে...");
+                setUploadProgress(55, "Firestore ডাটাবেসে পাঠানো হচ্ছে...");
                 await fbDb.collection("videos").doc(vidId).set({
                     id: vidId,
                     title: title,
                     type: type,
+                    videoUrl: urlInput || "",
                     fileName: selectedFile ? selectedFile.name : "",
-                    fileSize: selectedFile ? selectedFile.size : 0,
                     hidden: false,
                     createdAt: Date.now()
                 });
 
                 setUploadProgress(100, "✓ ১০০% আপলোড সম্পন্ন হয়েছে!");
                 document.getElementById("vidTitle").value = "";
+                document.getElementById("vidUrl").value = "";
                 fileInput.value = "";
                 await loadDashboardData();
             } catch (err) {
@@ -479,12 +452,6 @@
             await loadDashboardData();
         }
 
-        function isVideoExpired(createdAt) {
-            if (!createdAt) return false;
-            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-            return (Date.now() - createdAt) > thirtyDaysMs;
-        }
-
         function renderAdminVideos() {
             const grid = document.getElementById("adminVideoGrid");
             grid.innerHTML = "";
@@ -495,7 +462,6 @@
             }
 
             cachedVideos.forEach((vid) => {
-                const expired = vid.type === "qr" && isVideoExpired(vid.createdAt);
                 const card = document.createElement("div");
                 card.className = "dash-mini-card";
 
@@ -503,7 +469,6 @@
                     ? `<span class="badge badge-qr">QR (৩০ দিন)</span>`
                     : `<span class="badge badge-profile">Profile</span>`;
                 if (vid.hidden) badges += ` <span class="badge badge-hidden">Hidden</span>`;
-                if (expired) badges += ` <span class="badge badge-hidden">মেয়াদ শেষ</span>`;
 
                 const qrIconButtonHtml = vid.type === "qr" ? `
                     <button type="button" class="qr-icon-btn" title="QR Menu" onclick="toggleQrMenu('${vid.id}')">
@@ -519,16 +484,20 @@
                         <div class="qr-mini-frame">
                             <div id="qrcode-${vid.id}"></div>
                         </div>
-                        <div class="qr-mini-actions">
+                        <div>
                             <a href="video.html?v=${vid.id}" target="_blank" class="btn btn-primary btn-sm">খুলুন</a>
                         </div>
                     </div>
                 ` : "";
 
+                const mediaHtml = vid.videoUrl
+                    ? `<video class="dash-mini-video" src="${vid.videoUrl}" controls playsinline preload="metadata"></video>`
+                    : `<div class="dash-mini-video" style="display:flex;align-items:center;justify-content:center;color:#e2e8f0;font-size:11px;padding:8px;text-align:center;">
+                        ${vid.fileName || "ভিডিও লিংক নেই"}
+                       </div>`;
+
                 card.innerHTML = `
-                    <div class="dash-mini-video" style="display:flex;align-items:center;justify-content:center;color:#e2e8f0;font-size:12px;padding:8px;text-align:center;">
-                        ${vid.fileName ? vid.fileName : "ভিডিও এন্ট্রি"}
-                    </div>
+                    ${mediaHtml}
                     <div class="dash-title-row">
                         <div class="dash-mini-title" title="${vid.title}">${vid.title}</div>
                         ${qrIconButtonHtml}

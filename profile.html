@@ -51,28 +51,39 @@
                 <input type="email" id="googleEmailModalInput" placeholder="example@gmail.com">
             </div>
             <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                <button class="btn btn-glass btn-sm" style="color: var(--text); border-color: #cbd5e1;" onclick="closeGoogleModal()">Cancel</button>
-                <button class="btn btn-primary btn-sm" onclick="confirmGoogleFollow()">Continue & Follow</button>
+                <button type="button" class="btn btn-glass btn-sm" style="color: var(--text); border-color: #cbd5e1;" onclick="closeGoogleModal()">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="confirmGoogleFollow()">Continue & Follow</button>
             </div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
     <script>
         let currentUserEmail = sessionStorage.getItem("ia_google_user") || null;
         let currentSort = "latest";
+        let allFirestoreVideos = [];
+        let allFollowers = [];
+
+        async function loadFollowerData() {
+            if (!fbDb) return;
+            try {
+                const snap = await fbDb.collection("followers").get();
+                allFollowers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch (e) {
+                allFollowers = [];
+            }
+            updateFollowUI();
+        }
 
         function updateFollowUI() {
-            const followers = getFollowers();
-            document.getElementById("followerCount").innerText = followers.length;
-
+            document.getElementById("followerCount").innerText = allFollowers.length;
             const btn = document.getElementById("followBtn");
             const msg = document.getElementById("followMsg");
 
-            if (currentUserEmail && followers.some(f => f.email === currentUserEmail)) {
+            if (currentUserEmail && allFollowers.some(f => f.email === currentUserEmail)) {
                 btn.innerText = "✓ Following";
                 btn.classList.remove("btn-accent");
                 btn.classList.add("btn-dark");
@@ -81,7 +92,7 @@
                 btn.innerText = "+ Follow";
                 btn.classList.remove("btn-dark");
                 btn.classList.add("btn-accent");
-                msg.innerText = "Follow করতে চাইলে Google দিয়ে লগইন করতে হবে (আলাদা অ্যাকাউন্ট তৈরি হবে না)";
+                msg.innerText = "Follow করতে চাইলে Google দিয়ে লগইন করতে হবে";
             }
         }
 
@@ -94,24 +105,23 @@
             document.getElementById("googleLoginModal").classList.remove("open");
         }
 
-        function applyFollowForEmail(email) {
-            let followers = getFollowers();
-            const existingIndex = followers.findIndex(f => f.email === email);
+        async function applyFollowForEmail(email) {
+            if (!fbDb) return;
+            const docId = encodeURIComponent(email);
+            const existing = allFollowers.find(f => f.email === email);
 
-            if (existingIndex === -1) {
-                followers.push({
+            if (!existing) {
+                await fbDb.collection("followers").doc(docId).set({
                     email: email,
-                    followedAt: new Date().toLocaleString("bn-BD")
+                    followedAt: Date.now()
                 });
             } else {
-                followers.splice(existingIndex, 1);
+                await fbDb.collection("followers").doc(docId).delete();
             }
-
-            saveFollowers(followers);
-            updateFollowUI();
+            await loadFollowerData();
         }
 
-        function confirmGoogleFollow() {
+        async function confirmGoogleFollow() {
             const rawEmail = document.getElementById("googleEmailModalInput").value.trim().toLowerCase();
             if (!rawEmail || !rawEmail.includes("@")) {
                 alert("সঠিক Google ইমেইল দিন!");
@@ -120,15 +130,15 @@
             currentUserEmail = rawEmail;
             sessionStorage.setItem("ia_google_user", currentUserEmail);
             closeGoogleModal();
-            applyFollowForEmail(currentUserEmail);
+            await applyFollowForEmail(currentUserEmail);
         }
 
-        function handleFollowClick() {
+        async function handleFollowClick() {
             if (!currentUserEmail) {
                 openGoogleModal();
                 return;
             }
-            applyFollowForEmail(currentUserEmail);
+            await applyFollowForEmail(currentUserEmail);
         }
 
         function setSortOrder(order) {
@@ -142,9 +152,7 @@
             if (!videoEl) return;
             videoEl.muted = false;
             videoEl.controls = true;
-            if (overlayEl) {
-                overlayEl.style.display = "none";
-            }
+            if (overlayEl) overlayEl.style.display = "none";
 
             try {
                 await videoEl.play();
@@ -161,8 +169,20 @@
             } catch (e) {}
         }
 
-        async function renderProfileVideos() {
-            let videos = getVideos().filter(v => v.type === 'profile' && !v.hidden);
+        async function loadVideosFromFirestore() {
+            if (!fbDb) return;
+            try {
+                const snap = await fbDb.collection("videos").orderBy("createdAt", "desc").get();
+                allFirestoreVideos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch (e) {
+                const snap = await fbDb.collection("videos").get();
+                allFirestoreVideos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+            renderProfileVideos();
+        }
+
+        function renderProfileVideos() {
+            let videos = allFirestoreVideos.filter(v => v.type === "profile" && !v.hidden);
             document.getElementById("videoCount").innerText = videos.length;
 
             if (currentSort === "oldest") {
@@ -177,39 +197,47 @@
                 return;
             }
 
-            for (let idx = 0; idx < videos.length; idx++) {
-                const vid = videos[idx];
-                const playableUrl = await getVideoUrlFromDB(vid.id, vid.url);
-
+            videos.forEach((vid, idx) => {
                 const tile = document.createElement("div");
                 tile.className = "grid-tile";
                 tile.style.animationDelay = `${Math.min(idx * 45, 300)}ms`;
 
-                const videoEl = document.createElement("video");
-                videoEl.src = playableUrl;
-                videoEl.muted = true;
-                videoEl.playsInline = true;
-                videoEl.preload = "metadata";
+                if (vid.videoUrl) {
+                    const videoEl = document.createElement("video");
+                    videoEl.src = vid.videoUrl;
+                    videoEl.muted = true;
+                    videoEl.playsInline = true;
+                    videoEl.preload = "metadata";
 
-                const overlay = document.createElement("div");
-                overlay.className = "grid-tile-overlay";
-                overlay.innerText = vid.title;
+                    const overlay = document.createElement("div");
+                    overlay.className = "grid-tile-overlay";
+                    overlay.innerText = vid.title;
 
-                videoEl.onerror = () => {
-                    overlay.style.display = "block";
-                    overlay.innerText = vid.title + " • ফাইল লোড হয়নি";
-                };
+                    videoEl.onerror = () => {
+                        overlay.style.display = "block";
+                        overlay.innerText = vid.title + " • লিংক লোড হয়নি";
+                    };
 
-                tile.onclick = () => playTileFullscreen(videoEl, overlay);
+                    tile.onclick = () => playTileFullscreen(videoEl, overlay);
+                    tile.appendChild(videoEl);
+                    tile.appendChild(overlay);
+                } else {
+                    tile.style.background = "#0f172a";
+                    tile.style.display = "flex";
+                    tile.style.alignItems = "center";
+                    tile.style.justifyContent = "center";
+                    tile.style.color = "#ffffff";
+                    tile.style.padding = "12px";
+                    tile.style.textAlign = "center";
+                    tile.innerText = vid.title + (vid.fileName ? (" (" + vid.fileName + ")") : "");
+                }
 
-                tile.appendChild(videoEl);
-                tile.appendChild(overlay);
                 grid.appendChild(tile);
-            }
+            });
         }
 
-        updateFollowUI();
-        renderProfileVideos();
+        loadFollowerData();
+        loadVideosFromFirestore();
     </script>
 </body>
 </html>
