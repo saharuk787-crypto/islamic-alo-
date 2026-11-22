@@ -36,7 +36,10 @@
         <div class="video-grid" id="homeVideos"></div>
     </div>
 
-    <script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
     <script>
         const videos = getVideos().filter(v => v.type === 'profile' && !v.hidden);
         const container = document.getElementById("homeVideos");
