@@ -41,7 +41,6 @@
             opacity: 0.92;
         }
 
-        /* ছোট কল্যাপসিবল সেকশন বার */
         .compact-bar-card {
             background: var(--card);
             backdrop-filter: blur(12px);
@@ -85,9 +84,6 @@
             transform: scale(1.07);
             background: #ccfbf1;
         }
-        .mini-toggle-btn:active {
-            transform: scale(0.94);
-        }
         .mini-toggle-btn svg {
             width: 16px;
             height: 16px;
@@ -102,6 +98,42 @@
         }
         .collapsible-body.open {
             display: block;
+        }
+
+        /* Instagram-style Upload Progress Bar */
+        .upload-progress-box {
+            display: none;
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 12px;
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+        }
+        .upload-progress-box.active {
+            display: block;
+        }
+        .upload-progress-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f766e;
+            margin-bottom: 6px;
+        }
+        .upload-progress-track {
+            width: 100%;
+            height: 9px;
+            background: #ccfbf1;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .upload-progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #0d9488, #14b8a6);
+            border-radius: 999px;
+            transition: width 0.22s ease;
         }
 
         .dash-compact-grid {
@@ -124,11 +156,6 @@
             padding: 9px;
             box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
             animation: glassPop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
-        }
-        .dash-mini-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 22px rgba(15, 23, 42, 0.1);
         }
         .dash-mini-video {
             width: 100%;
@@ -165,21 +192,12 @@
             color: #0f766e;
             cursor: pointer;
             flex-shrink: 0;
-            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s ease;
-        }
-        .qr-icon-btn:hover {
-            transform: scale(1.08);
-            background: #ccfbf1;
-        }
-        .qr-icon-btn:active {
-            transform: scale(0.94);
         }
         .qr-icon-btn svg {
             width: 15px;
             height: 15px;
             fill: currentColor;
         }
-
         .qr-menu-drawer {
             display: none;
             margin-top: 8px;
@@ -188,7 +206,6 @@
             border: 1px solid #bbf7d0;
             border-radius: 10px;
             text-align: center;
-            animation: glassPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .qr-menu-drawer.open {
             display: block;
@@ -207,7 +224,6 @@
             flex-wrap: wrap;
             margin-top: 4px;
         }
-
         .dash-mini-footer {
             margin-top: 8px;
             padding-top: 7px;
@@ -235,7 +251,7 @@
                 <div>
                     <span class="badge badge-qr" style="margin-top: 0; margin-bottom: 6px;">ISLAMIC ALO ADMIN</span>
                     <h2 style="font-size: 20px;">স্বাগতম, Islamic alo</h2>
-                    <p id="activeAdminEmailText" style="font-size: 12px; opacity: 0.9; margin-top: 2px;"></p>
+                    <p id="activeAdminEmailText" style="font-size: 12px; opacity: 0.9; margin-top: 2px;">অ্যাকাউন্ট যাচাই হচ্ছে...</p>
                 </div>
                 <a href="followers.html" class="btn btn-accent btn-sm">Followers তালিকা</a>
             </div>
@@ -252,33 +268,6 @@
             </div>
         </div>
 
-        <!-- ছোট মেনু/আইকন: Admin Email ও Password পরিবর্তন -->
-        <div class="compact-bar-card">
-            <div class="compact-bar-header">
-                <div class="compact-bar-title">
-                    <span>⚙️ Admin Email ও Password পরিবর্তন</span>
-                </div>
-                <button type="button" class="mini-toggle-btn" title="খুলুন / বন্ধ করুন" onclick="toggleSection('credSection')">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                    </svg>
-                </button>
-            </div>
-            <div id="credSection" class="collapsible-body">
-                <div class="form-group">
-                    <label>নতুন Admin Email</label>
-                    <input type="email" id="newAdminEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>নতুন Password</label>
-                    <input type="text" id="newAdminPassword" required>
-                </div>
-                <button type="button" class="btn btn-dark btn-sm" onclick="updateAdminCredentials()">পরিবর্তন সেভ করুন</button>
-                <p id="credMsg" style="font-size: 13px; color: var(--success); margin-top: 8px;"></p>
-            </div>
-        </div>
-
-        <!-- ছোট মেনু/আইকন: নতুন ভিডিও আপলোড -->
         <div class="compact-bar-card">
             <div class="compact-bar-header">
                 <div class="compact-bar-title">
@@ -290,7 +279,7 @@
                     </svg>
                 </button>
             </div>
-            <div id="uploadSection" class="collapsible-body">
+            <div id="uploadSection" class="collapsible-body open">
                 <div class="form-group">
                     <label>ভিডিওর শিরোনাম (Title)</label>
                     <input type="text" id="vidTitle" placeholder="ভিডিওর নাম লিখুন...">
@@ -306,7 +295,18 @@
                     <label>ভিডিও ফাইল নির্বাচন করুন</label>
                     <input type="file" id="vidFile" accept="video/*">
                 </div>
-                <button type="button" class="btn btn-primary" onclick="handleUpload()">ভিডিও প্রকাশ করুন</button>
+                <button type="button" id="uploadSubmitBtn" class="btn btn-primary" onclick="handleUpload()">ভিডিও প্রকাশ করুন</button>
+
+                <!-- Instagram-like Progress Bar & Percentage -->
+                <div id="uploadProgressBox" class="upload-progress-box">
+                    <div class="upload-progress-top">
+                        <span id="uploadStatusText">আপলোড শুরু হচ্ছে...</span>
+                        <span id="uploadPercentText">0%</span>
+                    </div>
+                    <div class="upload-progress-track">
+                        <div id="uploadProgressFill" class="upload-progress-fill"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -314,7 +314,6 @@
         <div class="dash-compact-grid" id="adminVideoGrid"></div>
     </div>
 
-    <!-- Glass Delete Modal -->
     <div id="deleteConfirmModal" class="glass-modal-backdrop">
         <div class="glass-modal-box">
             <h3 style="color: var(--danger); margin-bottom: 6px;">ভিডিও ডিলিট নিশ্চিত করুন</h3>
@@ -329,108 +328,141 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
     <script>
-        checkAdminAuth();
+        let cachedVideos = [];
+        let pendingDeleteId = null;
 
-        const currentAdmin = getAdminConfig();
-        document.getElementById("newAdminEmail").value = currentAdmin.email;
-        document.getElementById("newAdminPassword").value = currentAdmin.password;
-        document.getElementById("activeAdminEmailText").innerText = "লগইন অ্যাকাউন্ট: " + currentAdmin.email;
-        document.getElementById("dashFollowerCount").innerText = getFollowers().length;
+        if (typeof fbAuth !== "undefined" && fbAuth) {
+            fbAuth.onAuthStateChanged(async (user) => {
+                if (!user || (typeof isAdminUser === "function" && !isAdminUser(user))) {
+                    sessionStorage.removeItem("ia_is_admin");
+                    window.location.href = "admin.html";
+                    return;
+                }
+                sessionStorage.setItem("ia_is_admin", "true");
+                document.getElementById("activeAdminEmailText").innerText = "লগইন অ্যাকাউন্ট: " + user.email;
+                await loadDashboardData();
+            });
+        } else {
+            window.location.href = "admin.html";
+        }
+
+        async function loadDashboardData() {
+            if (!fbDb) return;
+            try {
+                const vidSnap = await fbDb.collection("videos").orderBy("createdAt", "desc").get();
+                cachedVideos = vidSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                const vidSnap = await fbDb.collection("videos").get();
+                cachedVideos = vidSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+
+            let followerCount = 0;
+            try {
+                const fSnap = await fbDb.collection("followers").get();
+                followerCount = fSnap.size;
+            } catch (e) {
+                followerCount = 0;
+            }
+
+            document.getElementById("dashVideoCount").innerText = cachedVideos.length;
+            document.getElementById("dashFollowerCount").innerText = followerCount;
+            renderAdminVideos();
+        }
 
         function toggleSection(sectionId) {
             const el = document.getElementById(sectionId);
-            if (el) {
-                el.classList.toggle("open");
-            }
+            if (el) el.classList.toggle("open");
         }
 
-        function updateStats() {
-            document.getElementById("dashVideoCount").innerText = getVideos().length;
-            document.getElementById("dashFollowerCount").innerText = getFollowers().length;
-        }
-
-        function updateAdminCredentials() {
-            const email = document.getElementById("newAdminEmail").value.trim();
-            const pass = document.getElementById("newAdminPassword").value.trim();
-
-            if (!email || !email.includes("@") || !pass) {
-                alert("সঠিক ইমেইল এবং পাসওয়ার্ড দিন!");
-                return;
-            }
-
-            saveAdminConfig(email, pass);
-            document.getElementById("activeAdminEmailText").innerText = "লগইন অ্যাকাউন্ট: " + email;
-            document.getElementById("credMsg").innerText = "✓ নতুন ইমেইল ও পাসওয়ার্ড সফলভাবে সেভ হয়েছে!";
-        }
-
-        function logoutAdmin() {
+        async function logoutAdmin() {
             sessionStorage.removeItem("ia_is_admin");
+            if (typeof signOutUser === "function") {
+                await signOutUser();
+            }
             window.location.href = "admin.html";
         }
 
         function toggleQrMenu(videoId) {
             const drawer = document.getElementById("qr-drawer-" + videoId);
-            if (drawer) {
-                drawer.classList.toggle("open");
-            }
+            if (drawer) drawer.classList.toggle("open");
+        }
+
+        function setUploadProgress(percent, statusText) {
+            const box = document.getElementById("uploadProgressBox");
+            const fill = document.getElementById("uploadProgressFill");
+            const pctEl = document.getElementById("uploadPercentText");
+            const statusEl = document.getElementById("uploadStatusText");
+            box.classList.add("active");
+            const safePct = Math.max(0, Math.min(100, Math.round(percent)));
+            fill.style.width = safePct + "%";
+            pctEl.innerText = safePct + "%";
+            if (statusText) statusEl.innerText = statusText;
         }
 
         async function handleUpload() {
             const title = document.getElementById("vidTitle").value.trim();
             const type = document.getElementById("vidType").value;
             const fileInput = document.getElementById("vidFile");
+            const btn = document.getElementById("uploadSubmitBtn");
 
-            if (!title || !fileInput.files[0]) {
-                alert("শিরোনাম এবং ভিডিও ফাইল দুটোই দিতে হবে!");
+            if (!title) {
+                alert("ভিডিওর শিরোনাম লিখুন!");
+                return;
+            }
+            if (!fbDb) {
+                alert("Firestore সংযোগ পাওয়া যায়নি।");
                 return;
             }
 
-            const selectedFile = fileInput.files[0];
+            const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
             const vidId = "vid_" + Date.now();
-            const tempUrl = URL.createObjectURL(selectedFile);
 
-            await saveVideoBlobToDB(vidId, selectedFile);
+            btn.disabled = true;
+            setUploadProgress(15, "ভিডিও তথ্য প্রস্তুত হচ্ছে...");
 
-            const videos = getVideos();
-            videos.unshift({
-                id: vidId,
-                title: title,
-                type: type,
-                url: tempUrl,
-                hidden: false,
-                createdAt: Date.now()
-            });
+            try {
+                setUploadProgress(45, selectedFile ? ("ফাইল প্রসেস হচ্ছে: " + selectedFile.name) : "তথ্য সেভ হচ্ছে...");
+                await new Promise(r => setTimeout(r, 250));
 
-            saveVideos(videos);
-            document.getElementById("vidTitle").value = "";
-            fileInput.value = "";
-            updateStats();
-            renderAdminVideos();
-        }
+                setUploadProgress(75, "Firestore ডাটাবেসে পাঠানো হচ্ছে...");
+                await fbDb.collection("videos").doc(vidId).set({
+                    id: vidId,
+                    title: title,
+                    type: type,
+                    fileName: selectedFile ? selectedFile.name : "",
+                    fileSize: selectedFile ? selectedFile.size : 0,
+                    hidden: false,
+                    createdAt: Date.now()
+                });
 
-        function toggleVideoVisibility(id) {
-            const videos = getVideos();
-            const target = videos.find(v => v.id === id);
-            if (target) {
-                target.hidden = !target.hidden;
-                saveVideos(videos);
-                renderAdminVideos();
+                setUploadProgress(100, "✓ ১০০% আপলোড সম্পন্ন হয়েছে!");
+                document.getElementById("vidTitle").value = "";
+                fileInput.value = "";
+                await loadDashboardData();
+            } catch (err) {
+                setUploadProgress(0, "✕ আপলোড ব্যর্থ হয়েছে: " + (err && err.message ? err.message : "আবার চেষ্টা করুন"));
+            } finally {
+                btn.disabled = false;
             }
         }
 
-        let pendingDeleteId = null;
+        async function toggleVideoVisibility(id) {
+            const target = cachedVideos.find(v => v.id === id);
+            if (!target || !fbDb) return;
+            await fbDb.collection("videos").doc(id).update({ hidden: !target.hidden });
+            await loadDashboardData();
+        }
 
         function deleteVideo(id) {
-            const videos = getVideos();
-            const target = videos.find(v => v.id === id);
+            const target = cachedVideos.find(v => v.id === id);
             pendingDeleteId = id;
             document.getElementById("deleteModalText").innerText = target
-                ? `"${target.title}" ভিডিওটি স্থায়ীভাবে ডিলিট করতে চান?`
-                : "এই ভিডিওটি স্থায়ীভাবে ডিলিট করতে চান?";
+                ? `"${target.title}" ভিডিওটি ডিলিট করতে চান?`
+                : "এই ভিডিওটি ডিলিট করতে চান?";
             document.getElementById("deleteConfirmModal").classList.add("open");
         }
 
@@ -440,157 +472,38 @@
         }
 
         async function confirmDeleteVideo() {
-            if (!pendingDeleteId) return;
+            if (!pendingDeleteId || !fbDb) return;
             const idToRemove = pendingDeleteId;
             closeDeleteModal();
-            await deleteVideoBlobFromDB(idToRemove);
-            const videos = getVideos().filter(v => v.id !== idToRemove);
-            saveVideos(videos);
-            updateStats();
-            renderAdminVideos();
+            await fbDb.collection("videos").doc(idToRemove).delete();
+            await loadDashboardData();
         }
 
-        function drawRoundRect(ctx, x, y, w, h, r) {
-            ctx.beginPath();
-            ctx.moveTo(x + r, y);
-            ctx.arcTo(x + w, y, x + w, y + h, r);
-            ctx.arcTo(x + w, y + h, x, y + h, r);
-            ctx.arcTo(x, y + h, x, y, r);
-            ctx.arcTo(x, y, x + w, y, r);
-            ctx.closePath();
+        function isVideoExpired(createdAt) {
+            if (!createdAt) return false;
+            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+            return (Date.now() - createdAt) > thirtyDaysMs;
         }
 
-        function downloadHighResQR(videoId, encodedTitle) {
-            const title = decodeURIComponent(encodedTitle || "Islamic alo Video");
-            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf("/") + 1);
-            const fullVideoUrl = baseUrl + "video.html?v=" + videoId;
-
-            const tempHolder = document.createElement("div");
-            tempHolder.style.position = "fixed";
-            tempHolder.style.left = "-9999px";
-            document.body.appendChild(tempHolder);
-
-            new QRCode(tempHolder, {
-                text: fullVideoUrl,
-                width: 600,
-                height: 600,
-                colorDark: "#0f172a",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-
-            setTimeout(() => {
-                const qrCanvas = tempHolder.querySelector("canvas");
-                const qrImg = tempHolder.querySelector("img");
-
-                const hdCanvas = document.createElement("canvas");
-                hdCanvas.width = 800;
-                hdCanvas.height = 1020;
-                const ctx = hdCanvas.getContext("2d");
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = "high";
-
-                const bgGrad = ctx.createLinearGradient(0, 0, 800, 1020);
-                bgGrad.addColorStop(0, "#f0fdf4");
-                bgGrad.addColorStop(1, "#ecfeff");
-                ctx.fillStyle = bgGrad;
-                ctx.fillRect(0, 0, 800, 1020);
-
-                drawRoundRect(ctx, 45, 45, 710, 930, 36);
-                ctx.fillStyle = "#ffffff";
-                ctx.fill();
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = "#0f766e";
-                ctx.stroke();
-
-                drawRoundRect(ctx, 250, 90, 300, 52, 26);
-                ctx.fillStyle = "#0f766e";
-                ctx.fill();
-
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 24px sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText("ISLAMIC ALO", 400, 124);
-
-                ctx.fillStyle = "#0f172a";
-                ctx.font = "bold 30px sans-serif";
-                const shortTitle = title.length > 34 ? title.slice(0, 34) + "..." : title;
-                ctx.fillText(shortTitle, 400, 195);
-
-                drawRoundRect(ctx, 130, 230, 540, 540, 28);
-                ctx.fillStyle = "#ffffff";
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = "#cbd5e1";
-                ctx.stroke();
-
-                const finishDownload = (source) => {
-                    ctx.drawImage(source, 160, 260, 480, 480);
-
-                    ctx.fillStyle = "#0f766e";
-                    ctx.font = "bold 24px sans-serif";
-                    ctx.fillText("Scan QR Code to Watch Video", 400, 825);
-
-                    ctx.fillStyle = "#64748b";
-                    ctx.font = "20px sans-serif";
-                    ctx.fillText("Valid for 30 Days • No Login Required", 400, 868);
-
-                    ctx.fillStyle = "#94a3b8";
-                    ctx.font = "16px sans-serif";
-                    ctx.fillText("Islamic alo Official QR Pass", 400, 925);
-
-                    const safeName = title.replace(/[^a-zA-Z0-9_-]/g, "_");
-                    const link = document.createElement("a");
-                    link.download = `islamic-alo-HD-QR-${safeName || videoId}.png`;
-                    link.href = hdCanvas.toDataURL("image/png", 1.0);
-                    link.click();
-
-                    document.body.removeChild(tempHolder);
-                };
-
-                if (qrCanvas) {
-                    finishDownload(qrCanvas);
-                } else if (qrImg) {
-                    const imageObj = new Image();
-                    imageObj.crossOrigin = "anonymous";
-                    imageObj.onload = () => finishDownload(imageObj);
-                    imageObj.src = qrImg.src;
-                } else {
-                    document.body.removeChild(tempHolder);
-                    alert("HD QR তৈরি করতে সমস্যা হয়েছে।");
-                }
-            }, 150);
-        }
-
-        async function renderAdminVideos() {
-            const videos = getVideos();
-            updateStats();
+        function renderAdminVideos() {
             const grid = document.getElementById("adminVideoGrid");
             grid.innerHTML = "";
 
-            if (videos.length === 0) {
+            if (cachedVideos.length === 0) {
                 grid.innerHTML = `<div class="card" style="grid-column: 1 / -1;"><p style="color: var(--muted);">এখনো কোনো ভিডিও আপলোড করা হয়নি।</p></div>`;
                 return;
             }
 
-            for (let idx = 0; idx < videos.length; idx++) {
-                const vid = videos[idx];
-                const playableUrl = await getVideoUrlFromDB(vid.id, vid.url);
+            cachedVideos.forEach((vid) => {
                 const expired = vid.type === "qr" && isVideoExpired(vid.createdAt);
                 const card = document.createElement("div");
                 card.className = "dash-mini-card";
-                card.style.animationDelay = `${Math.min(idx * 40, 240)}ms`;
 
                 let badges = vid.type === "qr"
                     ? `<span class="badge badge-qr">QR (৩০ দিন)</span>`
                     : `<span class="badge badge-profile">Profile</span>`;
-
-                if (vid.hidden) {
-                    badges += ` <span class="badge badge-hidden">Hidden</span>`;
-                }
-                if (expired) {
-                    badges += ` <span class="badge badge-hidden">মেয়াদ শেষ</span>`;
-                }
+                if (vid.hidden) badges += ` <span class="badge badge-hidden">Hidden</span>`;
+                if (expired) badges += ` <span class="badge badge-hidden">মেয়াদ শেষ</span>`;
 
                 const qrIconButtonHtml = vid.type === "qr" ? `
                     <button type="button" class="qr-icon-btn" title="QR Menu" onclick="toggleQrMenu('${vid.id}')">
@@ -607,14 +520,15 @@
                             <div id="qrcode-${vid.id}"></div>
                         </div>
                         <div class="qr-mini-actions">
-                            <button type="button" class="btn btn-success btn-sm" onclick="downloadHighResQR('${vid.id}', '${encodeURIComponent(vid.title)}')">HD QR</button>
                             <a href="video.html?v=${vid.id}" target="_blank" class="btn btn-primary btn-sm">খুলুন</a>
                         </div>
                     </div>
                 ` : "";
 
                 card.innerHTML = `
-                    <video class="dash-mini-video" src="${playableUrl}" controls playsinline preload="metadata"></video>
+                    <div class="dash-mini-video" style="display:flex;align-items:center;justify-content:center;color:#e2e8f0;font-size:12px;padding:8px;text-align:center;">
+                        ${vid.fileName ? vid.fileName : "ভিডিও এন্ট্রি"}
+                    </div>
                     <div class="dash-title-row">
                         <div class="dash-mini-title" title="${vid.title}">${vid.title}</div>
                         ${qrIconButtonHtml}
@@ -645,10 +559,8 @@
                         correctLevel: QRCode.CorrectLevel.H
                     });
                 }
-            }
+            });
         }
-
-        renderAdminVideos();
     </script>
 </body>
 </html>
